@@ -7,6 +7,7 @@
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background: #F8F5F2;
   }
 
   /* Hide scrollbar */
@@ -17,4 +18,51 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
+
+/* Kitenge Pattern Classes */
+.kitenge-bg {
+  background-image: 
+    repeating-linear-gradient(45deg, 
+      transparent, 
+      transparent 15px, 
+      rgba(139, 69, 19, 0.03) 15px, 
+      rgba(139, 69, 19, 0.03) 16px
+    ),
+    repeating-linear-gradient(-45deg, 
+      transparent, 
+      transparent 15px, 
+      rgba(205, 133, 63, 0.03) 15px, 
+      rgba(205, 133, 63, 0.03) 16px
+    ),
+    repeating-linear-gradient(0deg, 
+      transparent, 
+      transparent 40px, 
+      rgba(210, 105, 30, 0.02) 40px, 
+      rgba(210, 105, 30, 0.02) 41px
+    ),
+    repeating-linear-gradient(90deg, 
+      transparent, 
+      transparent 40px, 
+      rgba(218, 165, 32, 0.02) 40px, 
+      rgba(218, 165, 32, 0.02) 41px
+    );
+}
+
+.kitenge-border-top {
+  background: repeating-linear-gradient(90deg, 
+    #8B4513 0px, #8B4513 8px, 
+    #D2691E 8px, #D2691E 16px, 
+    #CD853F 16px, #CD853F 24px, 
+    #DAA520 24px, #DAA520 32px
+  );
+}
+
+.kitenge-border-bottom {
+  background: repeating-linear-gradient(90deg, 
+    #DAA520 0px, #DAA520 8px, 
+    #CD853F 8px, #CD853F 16px, 
+    #D2691E 16px, #D2691E 24px, 
+    #8B4513 24px, #8B4513 32px
+  );
 }
