@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { Github } from 'lucide-react'
 import BrunoChat from './components/ai/BrunoChat'
 import './index.css'
 
@@ -16,7 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <header className="pt-12 pb-8 px-4 text-center relative">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold text-tz-dark">
-            Meet <span className="text-tz-kitenge-brown">Bruno</span>
+            Kutana na <span className="text-tz-kitenge-brown">Bruno</span>
           </h1>
           
           {/* Kitenge decorative line */}
@@ -32,7 +33,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           </div>
           
           <p className="mt-3 max-w-xl mx-auto text-[15px] md:text-base text-tz-earth/70 leading-relaxed">
-            Your friendly, knowledgeable companion who knows everything about Tanzania history, culture, geography, people, and more.
+            Rafiki yako mkarimu na mjuzi anayejua yote kuhusu historia, utamaduni, jiografia, watu, na mambo mengine ya Tanzania.
           </p>
         </div>
       </header>
@@ -46,7 +47,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <footer className="text-center pb-6 text-[12px] text-tz-earth/40 relative">
         <div className="flex items-center justify-center gap-3">
           <div className="h-px w-8 bg-tz-kitenge-brown/20" />
-          <span>Open Source</span>
+          <a 
+            href="https://github.com/zuck30/Bruno" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 hover:text-tz-dark transition-colors duration-200"
+          >
+            <Github size={14} />
+            <span>Bruno is Open-Sourced.</span>
+          </a>
           <div className="h-px w-8 bg-tz-kitenge-brown/20" />
         </div>
       </footer>
