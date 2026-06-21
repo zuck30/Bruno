@@ -135,7 +135,7 @@ This project is licensed under the **MIT License** see the [LICENSE](LICENSE) fi
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/zuck30/Bruno/discussions)
 - 🐛 **Issues**: [Report a Bug](https://github.com/zuck30/Bruno/issues)
 
-<!-- 
+
 <p align="center">
-    <img src="public/bot.png " alt="Bruno Screenshot" width="800">
-</p> -->
+    <img src="public/shot.png " alt="Bruno Screenshot" width="800">
+</p>
