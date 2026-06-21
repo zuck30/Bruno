@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0"
 
 const SYSTEM_PROMPT = `Your name is Bruno. You were created and developed in Tanzania by Antera Group Software. You are a world-class AI with deep expertise in all things Tanzania, while also being knowledgeable about global topics.
 
@@ -94,17 +93,24 @@ const extractMessageText = (msg: any): string => {
   return ''
 }
 
-const formatHistory = (messages: any[]) => {
-  return messages.slice(0, -1).map((msg: any) => {
-    let parts: { text: string }[]
-    const text = extractMessageText(msg)
-    parts = [{ text }]
-
-    return {
-      role: msg.role === 'assistant' ? 'model' : msg.role === 'model' ? 'model' : 'user',
-      parts,
-    }
+const formatMessagesForDeepSeek = (messages: any[]) => {
+  {/* DeepSeek also uses OpenAI-compatible format. SO this.*/}
+  const formatted = []
+  
+  {/* I put system prompt as first message */}
+  formatted.push({
+    role: 'system',
+    content: SYSTEM_PROMPT
   })
+  
+  {/* This here.. Add conversation history*/}
+  for (const msg of messages) {
+    const role = msg.role === 'assistant' || msg.role === 'model' ? 'assistant' : 'user'
+    const content = extractMessageText(msg)
+    formatted.push({ role, content })
+  }
+  
+  return formatted
 }
 
 const validateInput = (messages: any[]) => {
@@ -133,9 +139,9 @@ serve(async (req) => {
   }
 
   try {
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-    if (!GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY not set in environment")
+    const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY')
+    if (!DEEPSEEK_API_KEY) {
+      console.error("DEEPSEEK_API_KEY not set in environment")
       return new Response(
         JSON.stringify({ 
           error: "Bruno is temporarily unavailable. Please try again later.",
@@ -153,37 +159,40 @@ serve(async (req) => {
 
     validateInput(messages)
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-      systemInstruction: SYSTEM_PROMPT,
-    })
+    {/* This here.. Formats messages for DeepSeek API*/}
+    const formattedMessages = formatMessagesForDeepSeek(messages)
 
-    const formattedHistory = formatHistory(messages)
-    const lastMessageText = extractMessageText(messages[messages.length - 1])
-
-    const chat = model.startChat({
-      history: formattedHistory,
-      generationConfig: {
-        temperature: temperature,
-        maxOutputTokens: maxTokens,
-        topP: 0.95,
-        topK: 40,
+    {/* Call Happens Here.. Calling  DeepSeek API*/}
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
       },
+      body: JSON.stringify({
+        model: 'deepseek-v4-flash',
+        messages: formattedMessages,
+        temperature: temperature,
+        max_tokens: maxTokens,
+        top_p: 0.95,
+        stream: false
+      })
     })
 
-    const result = await chat.sendMessage(lastMessageText)
-    let text = result.response.text()
-    
-    if (!text || text.trim().length === 0) {
-      text = "I apologize, but I couldn't generate a proper response. Could you please rephrase your question?"
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('DeepSeek API error:', response.status, errorData)
+      throw new Error(errorData.error?.message || `DeepSeek API returned ${response.status}`)
     }
+
+    const data = await response.json()
+    const text = data.choices?.[0]?.message?.content || "I apologize, but I couldn't generate a proper response."
 
     return new Response(
       JSON.stringify({ 
         text,
         metadata: {
-          model: "gemini-2.0-flash-exp",
+          model: "deepseek-v4-flash",
           timestamp: new Date().toISOString(),
         }
       }),
@@ -196,7 +205,7 @@ serve(async (req) => {
     let errorMessage = error.message
     let statusCode = 500
     
-    if (error.message.includes('API key')) {
+    if (error.message.includes('API key') || error.message.includes('401')) {
       errorMessage = "Authentication error. Please check API configuration."
       statusCode = 401
     } else if (error.message.includes('limit') || error.message.includes('quota')) {
