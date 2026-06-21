@@ -64,7 +64,7 @@
 - **Styling**: Tailwind CSS 4
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
-- **AI API**: Google Gemini API
+- **AI API**: Deepseek API
 - **Backend**: Supabase Edge Functions
 - **Deployment**: Vercel
 
@@ -75,7 +75,7 @@
 # Prerequisites
 - Node.js 18+
 - npm or yarn
-- Google Gemini API key
+- Deepseek API key
 - Supabase account (optional)
 
 # Installation
@@ -99,8 +99,8 @@ npm run dev
 5. Open [http://localhost:5173](http://localhost:5173) to see Bruno in action.
 
 
-# Gemini API
-Bruno uses Google's Gemini API for generating responses. The system prompt is carefully crafted to ensure Bruno's personality and knowledge areas are consistent.
+# Deepseek API
+Bruno uses Deepseek's API for generating responses. The system prompt is carefully crafted to ensure Bruno's personality and knowledge areas are consistent.
 
 # Supabase Edge Function
 The chat functionality is deployed as a Supabase Edge Function for:
