@@ -14,7 +14,7 @@ import {
   ChefHat
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getBrunoResponse } from '@/lib/gemini';
+import { getBrunoResponse } from '@/lib/deepseek';
 
 type Msg = { role: 'user' | 'model'; text: string; time: string };
 
