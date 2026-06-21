@@ -35,48 +35,22 @@
 - **Global Ready**  Multilingual support (English, Swahili, and more)
 - **Open & Free**  MIT licensed, community-driven
 
-# Key Features
+# Tavily Search Integration
 
-# Tanzania-Specific Expertise
-- **Geography** - All regions, cities, climate zones, and natural resources
-- **History** - Pre-colonial era, independence, key figures, and milestones
-- **Culture** - Over 120 ethnic groups, languages, traditions, music, and arts
-- **Wildlife** - National parks, conservation, and wildlife species
-- **Economy** - Agriculture, mining, tourism, manufacturing, and trade
-- **Politics** - Government structure, policies, and current affairs
-- **Daily Life** - Customs, social norms, cuisine, celebrations, and more
+Bruno uses **Tavily** for real-time web search capabilities when in Search mode.
 
+## What is Tavily?
+Tavily is a search API optimized for AI agents. It provides:
+- Accurate, summarized search results
+- Source attribution
+- Answer extraction
+- Clean, structured data
 
-# Technical Features
--  Real-time streaming responses
--  Responsive mobile-first design
--  Multi-language support
--  Quick topic prompts
--  Beautiful Kitenge-inspired UI
--  Open source & easy to customize
+## Setup
+1. Get your Tavily API key from [Tavily](https://tavily.com/)
+2. Set the secret in Supabase in terminal or dashboard:
 
 ---
-
-# Tech Stack
-
-- **Frontend**: React 19 + TypeScript
-- **Build Tool**: Vite 5
-- **Styling**: Tailwind CSS 4
-- **Animations**: Framer Motion
-- **Icons**: Lucide React
-- **AI API**: Deepseek API
-- **Backend**: Supabase Edge Functions
-- **Deployment**: Vercel
-
----
-
-# Getting Started
-
-# Prerequisites
-- Node.js 18+
-- npm or yarn
-- Deepseek API key
-- Supabase account (optional)
 
 # Installation
 
@@ -95,8 +69,6 @@ npm install
 ```bash
 npm run dev
 ```
-
-5. Open [http://localhost:5173](http://localhost:5173) to see Bruno in action.
 
 
 # Deepseek API
