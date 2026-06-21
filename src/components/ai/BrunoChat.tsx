@@ -297,7 +297,6 @@ const BrunoChat = () => {
     setIsStreaming(true);
     setStreamingText('');
     
-    // Set mode indicators
     if (mode === 'deepthink') setIsThinking(true);
     if (mode === 'search') setIsSearching(true);
     
@@ -307,7 +306,6 @@ const BrunoChat = () => {
         parts: [{ text: m.text }]
       }));
 
-      // Pass mode to the API
       const fullReply = await getBrunoResponse(apiHistoryPayload, mode);
       setStreamingText(fullReply);
       
@@ -325,7 +323,6 @@ const BrunoChat = () => {
     }
   };
 
-  // Toggle mode
   const toggleMode = (newMode: Mode) => {
     setMode(mode === newMode ? 'normal' : newMode);
   };
@@ -340,16 +337,13 @@ const BrunoChat = () => {
         borderRadius: '52px',
       }}
     >
-      {/* Subtle Kitenge pattern overlay inside phone */}
       <div className="absolute inset-0 kitenge-bg opacity-[0.025] pointer-events-none" style={{ borderRadius: 'inherit', zIndex: 0 }} />
 
-      {/* Background blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ borderRadius: 'inherit', zIndex: 0 }}>
         <div className="absolute -top-8 -left-8 w-48 h-48 rounded-full bg-tz-dark/15 blur-[40px]" />
         <div className="absolute -bottom-8 -right-8 w-56 h-56 rounded-full bg-tz-dark/10 blur-[50px]" />
       </div>
 
-      {/* Dynamic Island */}
       <div className="relative z-10 flex justify-center pt-3 pb-1 shrink-0">
         <div
           className="flex items-center justify-between px-4 w-[126px] h-[34px] bg-tz-dark rounded-[20px]"
@@ -363,7 +357,6 @@ const BrunoChat = () => {
         </div>
       </div>
 
-      {/* Status bar with mode indicator */}
       <div className="relative z-10 flex items-center justify-between px-7 py-1 shrink-0">
         <span className="text-tz-dark text-[12px] font-bold tracking-tight">{clockTime}</span>
         <div className="flex items-center gap-1.5 text-tz-dark">
@@ -379,12 +372,10 @@ const BrunoChat = () => {
         </div>
       </div>
       
-      {/* Messages */}
       <div
         ref={scrollRef}
         className="relative z-10 flex-1 overflow-y-auto px-4 py-4 space-y-3"
       >
-        {/* Welcome state */}
         {messages.length === 0 && !isStreaming && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -399,7 +390,6 @@ const BrunoChat = () => {
               </p>
             </div>
 
-            {/* Mode selector */}
             <div className="flex gap-2">
               <button
                 onClick={() => toggleMode('deepthink')}
@@ -443,7 +433,6 @@ const BrunoChat = () => {
               </div>
             </motion.div>
 
-            {/* Quick prompts grid */}
             <div className="grid grid-cols-2 gap-2 w-full">
               {quickPrompts.map((q, i) => (
                 <motion.button
@@ -476,6 +465,39 @@ const BrunoChat = () => {
           <Bubble key={idx} msg={msg} isLast={idx === messages.length - 1} />
         ))}
 
+        {/* Show typing indicator before streaming starts */}
+        {isLoading && !streamingText && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-end gap-2 justify-start"
+          >
+            <Avatar size={28} />
+            <div className="flex flex-col items-start gap-1 max-w-[85%]">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tz-earth/10 text-[10px] text-tz-earth/60">
+                {isThinking && (
+                  <>
+                    <Brain size={12} className="animate-pulse" />
+                    <span>Bruno anafikiria...</span>
+                  </>
+                )}
+                {isSearching && (
+                  <>
+                    <Search size={12} className="animate-pulse" />
+                    <span>Bruno anatafuta...</span>
+                  </>
+                )}
+                {!isThinking && !isSearching && (
+                  <span>Bruno anaandika...</span>
+                )}
+              </div>
+              <div className="px-3 py-2 bg-transparent">
+                <TypingDots />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Streaming response */}
         {isStreaming && streamingText && (
           <StreamingBubble 
@@ -485,17 +507,8 @@ const BrunoChat = () => {
             isSearching={isSearching}
           />
         )}
-
-        {/* Loading indicator */}
-        {isLoading && !isStreaming && !streamingText && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-end gap-2">
-            <Avatar size={28} />
-            <div className="px-2 py-2"><TypingDots /></div>
-          </motion.div>
-        )}
       </div>
 
-      {/* Input area */}
       <div
         className="relative z-10 px-4 pt-3 shrink-0 bg-white/60 backdrop-blur-[20px] border-t border-tz-earth/7"
         style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}
@@ -503,7 +516,6 @@ const BrunoChat = () => {
         <div
           className="flex items-center gap-2 px-3 py-2 bg-tz-earth/5 rounded-[26px] border border-tz-earth/9"
         >
-
           <input
             ref={inputRef}
             type="text"
@@ -516,7 +528,6 @@ const BrunoChat = () => {
           />
 
           <div className="flex items-center gap-1">
-            {/* Mode toggle buttons */}
             <button
               onClick={() => toggleMode('deepthink')}
               className={cn(
