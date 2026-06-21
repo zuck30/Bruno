@@ -83,6 +83,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+{/* Extract message text from various formats */}
 const extractMessageText = (msg: any): string => {
   if (typeof msg === 'string') return msg
   if (typeof msg.parts === 'string') return msg.parts
@@ -93,17 +94,18 @@ const extractMessageText = (msg: any): string => {
   return ''
 }
 
+{/* Format messages for DeepSeek API */}
 const formatMessagesForDeepSeek = (messages: any[]) => {
-  {/* DeepSeek also uses OpenAI-compatible format. SO this.*/}
+  {/* DeepSeek uses OpenAI-compatible format */}
   const formatted = []
   
-  {/* I put system prompt as first message */}
+  {/* Put system prompt as first message */}
   formatted.push({
     role: 'system',
     content: SYSTEM_PROMPT
   })
   
-  {/* This here.. Add conversation history*/}
+  {/* Add conversation history */}
   for (const msg of messages) {
     const role = msg.role === 'assistant' || msg.role === 'model' ? 'assistant' : 'user'
     const content = extractMessageText(msg)
@@ -113,6 +115,7 @@ const formatMessagesForDeepSeek = (messages: any[]) => {
   return formatted
 }
 
+{/* Validate input messages */}
 const validateInput = (messages: any[]) => {
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     throw new Error("No messages received. Please provide an array of messages.")
@@ -133,12 +136,75 @@ const validateInput = (messages: any[]) => {
   }
 }
 
+{/* Search with Tavily */}
+async function performSearch(query: string) {
+  const TAVILY_API_KEY = Deno.env.get('TAVILY_API_KEY')
+  if (!TAVILY_API_KEY) {
+    console.warn("TAVILY_API_KEY not configured, search disabled")
+    return null
+  }
+
+  try {
+    const response = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        api_key: TAVILY_API_KEY,
+        query: query,
+        search_depth: "basic",
+        max_results: 5,
+        include_answer: true,
+        include_raw_content: false,
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Tavily API error:', response.status, errorText)
+      return null
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Tavily search error:', error)
+    return null
+  }
+}
+
+{/* Format search results */}
+function formatSearchResults(searchData: any): string {
+  if (!searchData) return ''
+  
+  let result = '\n\n SEARCH RESULTS\n'
+  
+  if (searchData.answer) {
+    result += `\nSummary: ${searchData.answer}\n`
+  }
+  
+  if (searchData.results && searchData.results.length > 0) {
+    result += '\nSources:\n'
+    searchData.results.forEach((r: any, i: number) => {
+      result += `${i+1}. ${r.title}\n`
+      result += `   ${r.snippet}\n`
+      if (r.url) result += `   ${r.url}\n`
+      result += '\n'
+    })
+  }
+  
+  return result
+}
+
+{/* Main handler */}
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    {/* Check API keys */}
     const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY')
     if (!DEEPSEEK_API_KEY) {
       console.error("DEEPSEEK_API_KEY not set in environment")
@@ -154,29 +220,91 @@ serve(async (req) => {
       )
     }
 
+    {/* Parse request body */}
     const body = await req.json()
-    const { messages, temperature = 0.7, maxTokens = 2000 } = body
+    const { 
+      messages, 
+      mode = 'normal', 
+      temperature = 0.7, 
+      maxTokens = 2000 
+    } = body
 
     validateInput(messages)
 
-    {/* This here.. Formats messages for DeepSeek API*/}
-    const formattedMessages = formatMessagesForDeepSeek(messages)
+    {/* Get user's latest query */}
+    const userQuery = extractMessageText(messages[messages.length - 1])
+    let finalMessages = formatMessagesForDeepSeek(messages)
+    let searchData = null
 
-    {/* Call Happens Here.. Calling  DeepSeek API*/}
+    {/* Search mode: Get web results */}
+    if (mode === 'search') {
+      console.log('Search mode enabled, searching for:', userQuery)
+      
+      searchData = await performSearch(userQuery)
+      
+      if (searchData) {
+        const formattedSearch = formatSearchResults(searchData)
+        
+        {/* Create enhanced system prompt with search results */}
+        const searchSystemPrompt = SYSTEM_PROMPT + `
+        
+SEARCH MODE ACTIVE 
+You have access to the following search results. Use them to provide accurate, up-to-date information.
+
+${formattedSearch}
+
+INSTRUCTIONS:
+- Use the search results to answer the user's question accurately
+- Cite sources when referencing specific information
+- If the search results don't contain relevant information, say so honestly
+- Combine your knowledge with search results for comprehensive answers
+- Always prioritize accuracy over speculation
+`
+        
+        {/* Rebuild messages with search-enhanced system prompt */}
+        finalMessages = [
+          { role: 'system', content: searchSystemPrompt },
+          ...formatMessagesForDeepSeek(messages)
+        ]
+        
+        console.log('Search completed, results found:', searchData.results?.length || 0)
+      } else {
+        console.log('Search failed or no results')
+      }
+    }
+
+    {/* DeepThink mode: Enable thinking */}
+    const model = 'deepseek-v4-flash'
+    let requestBody: any = {
+      model: model,
+      messages: finalMessages,
+      temperature: temperature,
+      max_tokens: maxTokens,
+      top_p: 0.95,
+      stream: false
+    }
+
+    if (mode === 'deepthink') {
+      console.log('DeepThink mode enabled, enabling reasoning')
+      requestBody = {
+        ...requestBody,
+        thinking: { type: 'enabled' }
+      }
+    } else {
+      requestBody = {
+        ...requestBody,
+        thinking: { type: 'disabled' }
+      }
+    }
+
+    {/* Call DeepSeek API */}
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
       },
-      body: JSON.stringify({
-        model: 'deepseek-v4-flash',
-        messages: formattedMessages,
-        temperature: temperature,
-        max_tokens: maxTokens,
-        top_p: 0.95,
-        stream: false
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
@@ -186,13 +314,26 @@ serve(async (req) => {
     }
 
     const data = await response.json()
-    const text = data.choices?.[0]?.message?.content || "I apologize, but I couldn't generate a proper response."
+    let text = data.choices?.[0]?.message?.content || "I apologize, but I couldn't generate a proper response."
 
+    {/* Add source attribution for search mode */}
+    if (mode === 'search' && searchData && searchData.results && searchData.results.length > 0) {
+      const sources = searchData.results.slice(0, 3).map((r: any, i: number) => 
+        `${i+1}. ${r.title} - ${r.url}`
+      ).join('\n')
+      
+      if (sources) {
+        text += `\n\n---\nSources:\n${sources}`
+      }
+    }
+
+    {/* Return response */}
     return new Response(
       JSON.stringify({ 
         text,
         metadata: {
-          model: "deepseek-v4-flash",
+          model: model,
+          mode: mode,
           timestamp: new Date().toISOString(),
         }
       }),
