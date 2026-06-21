@@ -2,21 +2,28 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send,
-  Mic,
-  Wifi,
-  Battery,
-  Signal,
   Landmark,
   Users,
   Lightbulb,
   PenTool,
   Pyramid,
-  ChefHat
+  ChefHat,
+  Search,
+  Brain,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getBrunoResponse } from '@/lib/deepseek';
 
-type Msg = { role: 'user' | 'model'; text: string; time: string };
+type Msg = { 
+  role: 'user' | 'model'; 
+  text: string; 
+  time: string;
+  isThinking?: boolean;
+  isSearching?: boolean;
+};
+
+type Mode = 'normal' | 'deepthink' | 'search';
 
 const getTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -52,7 +59,12 @@ const Avatar = ({ size = 36 }: { size?: number }) => (
 );
 
 /* ── Streaming message bubble ── */
-const StreamingBubble = ({ text, onComplete }: { text: string; onComplete: () => void }) => {
+const StreamingBubble = ({ text, onComplete, isThinking, isSearching }: { 
+  text: string; 
+  onComplete: () => void;
+  isThinking?: boolean;
+  isSearching?: boolean;
+}) => {
   const [displayText, setDisplayText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   const indexRef = useRef(0);
@@ -99,6 +111,23 @@ const StreamingBubble = ({ text, onComplete }: { text: string; onComplete: () =>
     >
       <Avatar size={28} />
       <div className="flex flex-col items-start gap-0.5 max-w-[85%]">
+        {/* Status indicator */}
+        {(isThinking || isSearching) && !isComplete && (
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tz-earth/10 text-[10px] text-tz-earth/60">
+            {isThinking && (
+              <>
+                <Brain size={12} className="animate-pulse" />
+                <span>Kufikiria...</span>
+              </>
+            )}
+            {isSearching && (
+              <>
+                <Search size={12} className="animate-pulse" />
+                <span>Kutafuta...</span>
+              </>
+            )}
+          </div>
+        )}
         <div
           className="px-4 py-2.5 text-[13.5px] leading-[1.55] shadow-sm w-full bg-transparent text-[#1a1108] rounded-[20px_20px_20px_5px] pl-0"
         >
@@ -127,8 +156,40 @@ const Bubble = ({ msg, isLast }: { msg: Msg; isLast: boolean }) => {
       transition={{ duration: 0.38, ease: [0.23, 1, 0.32, 1] }}
       className={cn('flex items-end gap-2', isUser ? 'justify-end' : 'justify-start')}
     >
-      {!isUser && <Avatar size={28} />}
+      {!isUser && (
+        <div className="relative">
+          <Avatar size={28} />
+          {/* Mode indicator badge on avatar */}
+          {msg.isThinking && (
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-purple-500 flex items-center justify-center">
+              <Brain size={8} className="text-white" />
+            </div>
+          )}
+          {msg.isSearching && (
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-blue-500 flex items-center justify-center">
+              <Globe size={8} className="text-white" />
+            </div>
+          )}
+        </div>
+      )}
       <div className={cn('flex flex-col gap-0.5 max-w-[85%]', isUser ? 'items-end' : 'items-start')}>
+        {/* Mode label for Bruno's messages */}
+        {!isUser && (msg.isThinking || msg.isSearching) && (
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tz-earth/10 text-[10px] text-tz-earth/60">
+            {msg.isThinking && (
+              <>
+                <Brain size={12} />
+                <span>DeepThink</span>
+              </>
+            )}
+            {msg.isSearching && (
+              <>
+                <Globe size={12} />
+                <span>Search</span>
+              </>
+            )}
+          </div>
+        )}
         <div
           className={cn(
             'px-4 py-2.5 text-[13.5px] leading-[1.55] shadow-sm w-full',
@@ -178,6 +239,9 @@ const BrunoChat = () => {
   const [streamingText, setStreamingText] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [clockTime, setClockTime] = useState('');
+  const [mode, setMode] = useState<Mode>('normal');
+  const [isThinking, setIsThinking] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -197,27 +261,45 @@ const BrunoChat = () => {
   const resetLoadingStates = useCallback(() => {
     setIsStreaming(false);
     setIsLoading(false);
+    setIsThinking(false);
+    setIsSearching(false);
   }, []);
 
   const handleStreamComplete = useCallback(() => {
     if (streamingText) {
-      setMessages(prev => [...prev, { role: 'model', text: streamingText, time: getTime() }]);
+      setMessages(prev => [...prev, { 
+        role: 'model', 
+        text: streamingText, 
+        time: getTime(),
+        isThinking: mode === 'deepthink',
+        isSearching: mode === 'search'
+      }]);
       setStreamingText('');
     }
     resetLoadingStates();
-  }, [streamingText, resetLoadingStates]);
+  }, [streamingText, resetLoadingStates, mode]);
 
   const handleSend = async (text?: string) => {
     const msg = (text ?? input).trim();
     if (!msg || isLoading) return;
     setInput('');
     
-    const userMsg: Msg = { role: 'user', text: msg, time: getTime() };
+    const userMsg: Msg = { 
+      role: 'user', 
+      text: msg, 
+      time: getTime(),
+      isThinking: false,
+      isSearching: false
+    };
     const currentMessages = [...messages, userMsg];
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
     setIsStreaming(true);
     setStreamingText('');
+    
+    // Set mode indicators
+    if (mode === 'deepthink') setIsThinking(true);
+    if (mode === 'search') setIsSearching(true);
     
     try {
       const apiHistoryPayload = currentMessages.map(m => ({
@@ -225,15 +307,27 @@ const BrunoChat = () => {
         parts: [{ text: m.text }]
       }));
 
-      const fullReply = await getBrunoResponse(apiHistoryPayload);
+      // Pass mode to the API
+      const fullReply = await getBrunoResponse(apiHistoryPayload, mode);
       setStreamingText(fullReply);
       
     } catch (err) {
       console.error("Bruno Error:", err);
       const errorMsg = 'Samahani, nimepoteza muunganisho. Jaribu kuuliza tena!';
-      setMessages(prev => [...prev, { role: 'model', text: errorMsg, time: getTime() }]);
+      setMessages(prev => [...prev, { 
+        role: 'model', 
+        text: errorMsg, 
+        time: getTime(),
+        isThinking: false,
+        isSearching: false
+      }]);
       resetLoadingStates();
     }
+  };
+
+  // Toggle mode
+  const toggleMode = (newMode: Mode) => {
+    setMode(mode === newMode ? 'normal' : newMode);
   };
 
   return (
@@ -269,13 +363,19 @@ const BrunoChat = () => {
         </div>
       </div>
 
-      {/* Status bar */}
+      {/* Status bar with mode indicator */}
       <div className="relative z-10 flex items-center justify-between px-7 py-1 shrink-0">
         <span className="text-tz-dark text-[12px] font-bold tracking-tight">{clockTime}</span>
         <div className="flex items-center gap-1.5 text-tz-dark">
-          <Signal size={12} />
-          <Wifi size={12} />
-          <Battery size={14} />
+          {mode !== 'normal' && (
+            <div className={cn(
+              "flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium",
+              mode === 'deepthink' ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+            )}>
+              {mode === 'deepthink' ? <Brain size={10} /> : <Globe size={10} />}
+              {mode === 'deepthink' ? 'DeepThink' : 'Search'}
+            </div>
+          )}
         </div>
       </div>
       
@@ -297,6 +397,34 @@ const BrunoChat = () => {
               <p className="text-[12.5px] leading-relaxed max-w-[280px] mx-auto text-tz-earth/45">
                 Rafiki yako anayejua yote kuhusu Tanzania. We niulize chochote.
               </p>
+            </div>
+
+            {/* Mode selector */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => toggleMode('deepthink')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  mode === 'deepthink' 
+                    ? "bg-purple-600 text-white shadow-md" 
+                    : "bg-tz-earth/10 text-tz-earth/60 hover:bg-tz-earth/20"
+                )}
+              >
+                <Brain size={14} />
+                DeepThink
+              </button>
+              <button
+                onClick={() => toggleMode('search')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  mode === 'search' 
+                    ? "bg-blue-600 text-white shadow-md" 
+                    : "bg-tz-earth/10 text-tz-earth/60 hover:bg-tz-earth/20"
+                )}
+              >
+                <Globe size={14} />
+                Search
+              </button>
             </div>
 
             <div className="px-4 py-1.5 text-[10px] tracking-widest uppercase bg-tz-earth/6 rounded-[20px] text-tz-earth/35">
@@ -350,7 +478,12 @@ const BrunoChat = () => {
 
         {/* Streaming response */}
         {isStreaming && streamingText && (
-          <StreamingBubble text={streamingText} onComplete={handleStreamComplete} />
+          <StreamingBubble 
+            text={streamingText} 
+            onComplete={handleStreamComplete}
+            isThinking={isThinking}
+            isSearching={isSearching}
+          />
         )}
 
         {/* Loading indicator */}
@@ -370,9 +503,6 @@ const BrunoChat = () => {
         <div
           className="flex items-center gap-2 px-3 py-2 bg-tz-earth/5 rounded-[26px] border border-tz-earth/9"
         >
-          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="w-7 h-7 flex items-center justify-center text-tz-earth/30">
-            <Mic size={16} />
-          </motion.button>
 
           <input
             ref={inputRef}
@@ -380,33 +510,61 @@ const BrunoChat = () => {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Muulize Bruno chochote..."
+            placeholder={mode === 'deepthink' ? "Niulize kwa kufikiria sana..." : mode === 'search' ? "Tafuta kwenye web..." : "Muulize Bruno chochote..."}
             className="flex-1 bg-transparent text-[13.5px] outline-none text-tz-dark placeholder:text-tz-earth/40"
             disabled={isLoading || isStreaming}
           />
 
-          <AnimatePresence mode="wait">
-            {input.trim() ? (
-              <motion.button
-                key="send"
-                initial={{ scale: 0, rotate: -45 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 45 }}
-                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-                whileHover={{ scale: 1.12 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => handleSend()}
-                disabled={isLoading || isStreaming}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-md bg-tz-dark"
-              >
-                <Send size={14} />
-              </motion.button>
-            ) : (
-              <motion.span key="idle" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="text-[17px] select-none">
-                🇹🇿
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <div className="flex items-center gap-1">
+            {/* Mode toggle buttons */}
+            <button
+              onClick={() => toggleMode('deepthink')}
+              className={cn(
+                "p-1 rounded-full transition-all",
+                mode === 'deepthink' 
+                  ? "text-purple-600 bg-purple-100" 
+                  : "text-tz-earth/30 hover:text-tz-earth/60"
+              )}
+              title="DeepThink mode"
+            >
+              <Brain size={16} />
+            </button>
+            <button
+              onClick={() => toggleMode('search')}
+              className={cn(
+                "p-1 rounded-full transition-all",
+                mode === 'search' 
+                  ? "text-blue-600 bg-blue-100" 
+                  : "text-tz-earth/30 hover:text-tz-earth/60"
+              )}
+              title="Search mode"
+            >
+              <Globe size={16} />
+            </button>
+
+            <AnimatePresence mode="wait">
+              {input.trim() ? (
+                <motion.button
+                  key="send"
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  exit={{ scale: 0, rotate: 45 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  whileHover={{ scale: 1.12 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleSend()}
+                  disabled={isLoading || isStreaming}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-md bg-tz-dark"
+                >
+                  <Send size={14} />
+                </motion.button>
+              ) : (
+                <motion.span key="idle" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="text-[17px] select-none">
+                  {/* 🇹🇿 */}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         <div className="flex justify-center mt-3 mb-1">
