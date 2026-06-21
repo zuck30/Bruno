@@ -6,12 +6,12 @@ import {
   Wifi,
   Battery,
   Signal,
-  Map,
-  Mountain,
   Landmark,
-  UtensilsCrossed,
   Users,
-  Lightbulb
+  Lightbulb,
+  PenTool,
+  Pyramid,
+  ChefHat
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getBrunoResponse } from '@/lib/gemini';
@@ -44,9 +44,9 @@ const Avatar = ({ size = 36 }: { size?: number }) => (
       transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
     />
     <div
-      className="absolute inset-[2px] rounded-full flex items-center justify-center bg-white/92 backdrop-blur-sm"
+      className="absolute inset-[2px] rounded-full flex items-center justify-center bg-white/92 backdrop-blur-sm overflow-hidden"
     >
-      <Map size={size * 0.45} className="text-tz-dark" />
+      <img src="/bot.png" alt="Bruno" className="w-full h-full object-cover" />
     </div>
   </div>
 );
@@ -154,8 +154,8 @@ const Bubble = ({ msg, isLast }: { msg: Msg; isLast: boolean }) => {
         </div>
       </div>
       {isUser && (
-        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[12px] bg-tz-earth/8 border border-tz-earth/10">
-          👤
+        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 overflow-hidden bg-tz-earth/8 border border-tz-earth/10">
+          <img src="/user.png" alt="User" className="w-full h-full object-cover" />
         </div>
       )}
     </motion.div>
@@ -163,12 +163,12 @@ const Bubble = ({ msg, isLast }: { msg: Msg; isLast: boolean }) => {
 };
 
 const quickPrompts = [
-  { icon: <Map size={16} />, label: 'Regions & geography', query: 'Tell me about the regions and geography of Tanzania' },
-  { icon: <Mountain size={16} />, label: 'Wildlife & nature', query: 'What wildlife and nature can I experience in Tanzania?' },
-  { icon: <Landmark size={16} />, label: 'History & independence', query: 'Tell me about Tanzania\'s history and independence' },
-  { icon: <UtensilsCrossed size={16} />, label: 'Food & traditions', query: 'What are traditional Tanzanian foods and cultural traditions?' },
-  { icon: <Users size={16} />, label: 'People & culture', query: 'Tell me about the people and diverse cultures of Tanzania' },
-  { icon: <Lightbulb size={16} />, label: 'General facts', query: 'Share some interesting facts about Tanzania' },
+  { icon: <Pyramid size={16} />, label: 'Jiografia ya Tanzania', query: 'Bruno, Niambie kuhusu jiografia ya Tanzania' },
+  { icon: <PenTool size={16} />, label: 'Shairi', query: 'Niandikie Shairi kuhusu Tanzania?' },
+  { icon: <Landmark size={16} />, label: 'Historia na uhuru', query: 'Niambie Kuhusu Historia na Uhuru wa Tanzania' },
+  { icon: <ChefHat size={16} />, label: 'Chakula na mila', query: 'Chakula Gani Kinapendwa sana Tanzania?' },
+  { icon: <Users size={16} />, label: 'Watu na utamaduni', query: 'Nambie Kuhusu Watu na Utamaduni wa Kitanzania' },
+  { icon: <Lightbulb size={16} />, label: 'Mambo ya kuvutia', query: 'Bruno Nipe facts 10 kuhusu Tanzania' },
 ];
 
 const BrunoChat = () => {
@@ -230,7 +230,7 @@ const BrunoChat = () => {
       
     } catch (err) {
       console.error("Bruno Error:", err);
-      const errorMsg = 'Sorry, I lost connection. Try asking me again!';
+      const errorMsg = 'Samahani, nimepoteza muunganisho. Jaribu kuuliza tena!';
       setMessages(prev => [...prev, { role: 'model', text: errorMsg, time: getTime() }]);
       resetLoadingStates();
     }
@@ -292,16 +292,15 @@ const BrunoChat = () => {
             transition={{ delay: 0.15 }}
             className="flex flex-col items-center pt-2 pb-2 space-y-5"
           >
-            <Avatar size={64} />
             <div className="text-center space-y-1.5">
-              <p className="font-bold text-[17px] text-tz-dark">Mambo! I'm Bruno</p>
+              <p className="font-bold text-[22px] text-tz-dark">Mambo! Mimi ni Bruno</p>
               <p className="text-[12.5px] leading-relaxed max-w-[280px] mx-auto text-tz-earth/45">
-                Your friendly companion who knows everything about Tanzania. Ask me anything.
+                Rafiki yako anayejua yote kuhusu Tanzania. We niulize chochote.
               </p>
             </div>
 
             <div className="px-4 py-1.5 text-[10px] tracking-widest uppercase bg-tz-earth/6 rounded-[20px] text-tz-earth/35">
-              Today
+              Leo
             </div>
 
             <motion.div
@@ -312,7 +311,7 @@ const BrunoChat = () => {
             >
               <Avatar size={28} />
               <div className="px-4 py-2.5 text-[13.5px] leading-relaxed flex-1 bg-transparent text-[#1a1108] pl-0">
-                What would you like to know about Tanzania today?
+                Ungependa kujua nini kuhusu Tanzania leo?
               </div>
             </motion.div>
 
@@ -340,7 +339,7 @@ const BrunoChat = () => {
         {messages.length > 0 && (
           <div className="flex justify-center">
             <div className="px-4 py-1.5 text-[10px] tracking-widest uppercase bg-tz-earth/6 rounded-[20px] text-tz-earth/35">
-              Today
+              Leo
             </div>
           </div>
         )}
@@ -381,7 +380,7 @@ const BrunoChat = () => {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Ask Bruno anything..."
+            placeholder="Muulize Bruno chochote..."
             className="flex-1 bg-transparent text-[13.5px] outline-none text-tz-dark placeholder:text-tz-earth/40"
             disabled={isLoading || isStreaming}
           />
