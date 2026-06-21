@@ -197,6 +197,20 @@ function formatSearchResults(searchData: any): string {
   return result
 }
 
+{/* Clean markdown from text */}
+function cleanText(text: string): string {
+  return text
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    .replace(/__/g, '')
+    .replace(/_/g, '')
+    .replace(/---/g, '')
+    .replace(/~~/g, '')
+    .replace(/`/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 {/* Main handler */}
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -315,6 +329,9 @@ INSTRUCTIONS:
 
     const data = await response.json()
     let text = data.choices?.[0]?.message?.content || "I apologize, but I couldn't generate a proper response."
+
+    {/* Clean markdown from response */}
+    text = cleanText(text)
 
     {/* Add source attribution for search mode */}
     if (mode === 'search' && searchData && searchData.results && searchData.results.length > 0) {
