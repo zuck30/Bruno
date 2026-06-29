@@ -288,7 +288,7 @@ INSTRUCTIONS:
     }
 
     {/* DeepThink mode: Enable thinking */}
-    const model = 'deepseek-v4-flash'
+    const model = 'deepseek-chat'
     let requestBody: any = {
       model: model,
       messages: finalMessages,
