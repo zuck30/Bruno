@@ -311,7 +311,7 @@ const BrunoChat = () => {
       
     } catch (err) {
       console.error("Bruno Error:", err);
-      const errorMsg = 'Samahani, nimepoteza muunganisho. Jaribu kuuliza tena!';
+      const errorMsg = 'Samahani, Jaribu kuuliza tena!';
       setMessages(prev => [...prev, { 
         role: 'model', 
         text: errorMsg, 
