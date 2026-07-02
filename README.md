@@ -39,18 +39,18 @@
 
 Bruno uses **Tavily** for real-time web search capabilities when in Search mode.
 
-## What is Tavily?
+# What is Tavily?
 Tavily is a search API optimized for AI agents. It provides:
 - Accurate, summarized search results
 - Source attribution
 - Answer extraction
 - Clean, structured data
 
-## Setup
+# Setup
 1. Get your Tavily API key from [Tavily](https://tavily.com/)
 2. Set the secret in Supabase in terminal or dashboard:
 
----
+
 
 # Installation
 
@@ -80,7 +80,6 @@ The chat functionality is deployed as a Supabase Edge Function for:
 - Secure API key management
 - Low-latency responses
 
----
 
 # Changing Bruno's Personality
 Edit the `SYSTEM_PROMPT` in `supabase/functions/bruno-chat/index.ts`
@@ -91,7 +90,6 @@ Modify the `quickPrompts` array in `src/components/ai/BrunoChat.tsx`
 # Styling
 Update `tailwind.config.cjs` for colors, fonts, and Kitenge patterns
 
----
 
 # Roadmap
 
@@ -103,7 +101,6 @@ Update `tailwind.config.cjs` for colors, fonts, and Kitenge patterns
 - [ ] Custom knowledge base upload
 - [ ] Community contributions hub
 
----
 
 # Contributing
 
@@ -121,13 +118,9 @@ Bruno is open source and we welcome contributions! Here's how you can help:
 - Update documentation for new features
 - Test thoroughly before submitting
 
----
-
 # License
 
 This project is licensed under the **MIT License** see the [LICENSE](LICENSE) file for details.
-
----
 
 # Support & Community
 
